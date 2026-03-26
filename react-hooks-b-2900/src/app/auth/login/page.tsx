@@ -1,0 +1,150 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AuthFormWrapper from '@/component/AuthFormWrapper';
+import SocialAuth from '@/component/SocialAuth';
+import Link from 'next/link';
+import { toast } from 'react-toastify';
+
+interface LoginFormData {
+  email: string;
+  password: string;
+  captchaInput: string;
+  rememberMe: boolean;
+}
+
+interface ErrorObject {
+  email?: string;
+  password?: string;
+  captcha?: string;
+}
+
+const DEFAULT_CAPTCHA = 'AbCdEf';
+
+const LoginPage = () => {
+  const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: '',
+    password: '',
+    captchaInput: '',
+    rememberMe: false,
+  });
+  
+  const [errors, setErrors] = useState<ErrorObject>({});
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const newErrors: ErrorObject = {};
+
+    if (!formData.email.trim()) newErrors.email = 'Email tidak boleh kosong';
+    if (!formData.password.trim()) newErrors.password = 'Password tidak boleh kosong';
+    if (!formData.captchaInput.trim()) {
+      newErrors.captcha = 'Captcha belum diisi';
+    } else if (formData.captchaInput !== DEFAULT_CAPTCHA) {
+      newErrors.captcha = 'Captcha salah';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Login Gagal', { theme: 'dark', position: 'top-right' });
+      return;
+    }
+
+    toast.success('Login Berhasil', { theme: 'dark', position: 'top-right' });
+    router.push('/home');
+  };
+
+  if (!isMounted) {
+    return null;
+  }
+
+  return (
+    <AuthFormWrapper title="Login">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-gray-700">Email</label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'} placeholder-gray-400`}
+            placeholder="Masukkan email"
+          />
+          {errors.email && <p className="text-red-500 text-sm italic mt-1">{errors.email}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium text-gray-700">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'} placeholder-gray-400`}
+            placeholder="Masukkan password"
+          />
+          {errors.password && <p className="text-red-500 text-sm italic mt-1">{errors.password}</p>}
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <label className="flex items-center text-sm text-gray-700">
+            <input
+              type="checkbox"
+              name="rememberMe"
+              checked={formData.rememberMe}
+              onChange={(e) => setFormData((prev) => ({ ...prev, rememberMe: e.target.checked }))}
+              className="mr-2 w-4 h-4 rounded border-gray-300"
+            />
+            Ingat Saya
+          </label>
+          <Link href="#" className="text-blue-600 hover:text-blue-800 text-sm font-semibold">
+            Forgot Password?
+          </Link>
+        </div>
+
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-gray-700">Captcha:</span>
+            <span className="font-mono text-lg font-bold text-gray-800 bg-gray-100 px-3 py-1.5 rounded">{DEFAULT_CAPTCHA}</span>
+          </div>
+          <input
+            type="text"
+            name="captchaInput"
+            value={formData.captchaInput}
+            onChange={handleChange}
+            className={`w-full px-4 py-2.5 rounded-lg border ${errors.captcha ? 'border-red-500' : 'border-gray-300'} placeholder-gray-400`}
+            placeholder="Masukkan captcha"
+          />
+          {errors.captcha && <p className="text-red-500 text-sm italic mt-1">{errors.captcha}</p>}
+        </div>
+
+        <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg mt-4 transition-colors">
+          Sign In
+        </button>
+      </form>
+      
+      <div className="mt-6">
+        <SocialAuth />
+      </div>
+
+      <p className="mt-6 text-center text-sm text-gray-600">
+        Tidak punya akun? <Link href="/auth/register" className="text-blue-600 hover:text-blue-800 font-semibold">Daftar</Link>
+      </p>
+    </AuthFormWrapper>
+  );
+};
+export default LoginPage;
